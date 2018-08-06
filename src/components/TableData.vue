@@ -11,22 +11,22 @@
                         <i class="form-icon"></i>
                     </label>
                 </th>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Email</th>
+                <th @click="tablesort('name')">Name</th>
+                <th @click="tablesort('age')">Age</th>
+                <th @click="tablesort('email')">Email</th>
             </tr>
             </thead>
             <tbody>
-            <tr v-for="i in items">
+            <tr v-for="item in items">
                 <td>
                     <label class="form-checkbox">
-                        <input type="checkbox" :value="i.id" v-model="selected">
+                        <input type="checkbox" :value="item.id" v-model="selected">
                         <i class="form-icon"></i>
                     </label>
                 </td>
-                <td>{{i.name}}</td>
-                <td>{{i.age}}</td>
-                <td>{{i.email}}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.age }}</td>
+                <td>{{ item.email }}</td>
             </tr>
             </tbody>
         </table>
@@ -45,8 +45,8 @@
                     {
                         id: "id1",
                         name: "John Doe",
-                        age: 20,
-                        email: "email@example.com"
+                        age: 22,
+                        email: "email1@example.com"
                     },
                     {
                         id: "id2",
@@ -68,6 +68,7 @@
                     }
                 ],
                 selected: [],
+                order: true,
                 selectAll: false
             };
         },
@@ -79,7 +80,36 @@
                         this.selected.push(this.items[i].id);
                     }
                 }
-            }
+            },
+            tablesort: function( key, e ) {
+                let sort_order = 'asc';
+                if ( this.order === false  ) {
+                    sort_order = 'desc';
+                }
+                this.items.sort( this.compareValues( key, sort_order ) );
+                this.order = !this.order;
+            },
+            compareValues: function(key, order='asc') {
+                return function(a, b) {
+                    if(!a.hasOwnProperty(key) ||
+                        !b.hasOwnProperty(key)) {
+                        return 0;
+                    }
+
+                    const varA = (typeof a[key] === 'string') ?
+                        a[key].toUpperCase() : a[key];
+                    const varB = (typeof b[key] === 'string') ?
+                        b[key].toUpperCase() : b[key];
+
+                    let comparison = 0;
+                    if (varA > varB) {
+                        comparison = 1;
+                    } else if (varA < varB) {
+                        comparison = -1;
+                    }
+                    return ( (order === 'desc') ? (comparison * -1) : comparison );
+                };
+            },
         },
     }
 </script>
