@@ -2,10 +2,14 @@
     <div>
         <h2> {{ msg }} </h2>
         <br/>
+        <label> Search </label>
+        <br/>
+        <input type="text" v-model="searchItem"/>
+        <br/>
         <table class="table table-striped table-hover">
             <thead>
             <tr>
-                <th>
+                <th v-if="!searchItem.length">
                     <label class="form-checkbox">
                         <input type="checkbox" v-model="selectAll" @click="select">
                         <i class="form-icon"></i>
@@ -14,30 +18,54 @@
                 <th @click="tablesort('name')">Name</th>
                 <th @click="tablesort('age')">Age</th>
                 <th @click="tablesort('email')">Email</th>
+                <td>Edit</td>
             </tr>
             </thead>
             <tbody>
-            <tr v-for="item in items">
-                <td>
-                    <label class="form-checkbox">
-                        <input type="checkbox" :value="item.id" v-model="selected">
-                        <i class="form-icon"></i>
-                    </label>
-                </td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.age }}</td>
-                <td>{{ item.email }}</td>
-            </tr>
+            <template v-if="searchItem.length && foundItems">
+                <tr v-for="fitem in foundItems">
+                    <td>{{ fitem.name }}</td>
+                    <td>{{ fitem.age }}</td>
+                    <td>{{ fitem.email }}</td>
+                </tr>
+            </template>
+            <template v-else>
+                <tr v-for="item in pagedItems">
+                    <td>
+                        <label class="form-checkbox">
+                            <input type="checkbox" :value="item.id" v-model="selected">
+                            <i class="form-icon"></i>
+                        </label>
+                    </td>
+                    <td><input type="text" v-model="item.name" :disabled="item.noedit"/></td>
+                    <td><input type="text" v-model="item.age" :disabled="item.noedit"/></td>
+                    <td><input type="text" v-model="item.email" :disabled="item.noedit"/></td>
+                    <td> <a href="#" @click.prevent="makeEditable(item.id)">Edit</a> </td>
+                </tr>
+            </template>
+
             </tbody>
         </table>
+        <pagination
+            :items="items"
+            @pageUpdate="updatePage"
+            :currentPage="currentPage"
+            :pageSize="pageSize">
+        </pagination>
     </div>
 </template>
 
 <script>
+
+    import Pagination from './Pagination.vue'
+
     export default {
         name: 'TableData',
         props: {
             msg: String
+        },
+        components: {
+            Pagination
         },
         data: function () {
             return {
@@ -46,31 +74,52 @@
                         id: "id1",
                         name: "John Doe",
                         age: 22,
-                        email: "email1@example.com"
+                        email: "email1@example.com",
+                        noedit: true
                     },
                     {
                         id: "id2",
                         name: "Jane Doe",
                         age: 21,
-                        email: "email2@example.com"
+                        email: "email2@example.com",
+                        noedit: true
                     },
                     {
                         id: "id3",
                         name: "Mr. Smith",
                         age: 28,
-                        email: "email3@example.com"
+                        email: "email3@example.com",
+                        noedit: true
                     },
                     {
                         id: "id4",
                         name: "Mrs. Smith",
                         age: 25,
-                        email: "email4@example.com"
+                        email: "email4@example.com",
+                        noedit: true
                     }
                 ],
                 selected: [],
+                searchItem: '',
                 order: true,
-                selectAll: false
+                selectAll: false,
+                currentPage: 0,
+                pageSize: 3,
+                pagedItems: []
             };
+        },
+        created: function() {
+            this.updatepagedItems();
+        },
+        computed: {
+            foundItems: function() {
+                let find = this.searchItem;
+                return this.items.filter( function (el) {
+                    return ( el.name == find ||
+                        el.age == find ||
+                        el.email == find );
+                });
+            }
         },
         methods: {
             select: function() {
@@ -87,6 +136,7 @@
                     sort_order = 'desc';
                 }
                 this.items.sort( this.compareValues( key, sort_order ) );
+                this.updatepagedItems();
                 this.order = !this.order;
             },
             compareValues: function(key, order='asc') {
@@ -110,7 +160,30 @@
                     return ( (order === 'desc') ? (comparison * -1) : comparison );
                 };
             },
+            updatepagedItems: function(){
+                this.pagedItems = this.items.slice(this.currentPage * this.pageSize, (this.currentPage * this.pageSize) + this.pageSize);
+
+                if (this.pagedItems.length === 0 && this.currentPage > 0) {
+                    this.updatePage(this.currentPage -1);
+                }
+            },
+            updatePage: function(pageNumber){
+                this.currentPage = pageNumber;
+                this.updatepagedItems();
+            },
+            makeEditable: function(item_id){
+                for (let item in this.items) {
+                    if ( this.items[item].id === item_id ) {
+                        this.items[item].noedit = !this.items[item].noedit;
+                    }
+                }
+            }
         },
+        watch: {
+            searchItem: function( newval) {
+                this.searchItem = newval;
+            }
+        }
     }
 </script>
 
