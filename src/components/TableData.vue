@@ -15,10 +15,12 @@
                         <i class="form-icon"></i>
                     </label>
                 </th>
-                <th @click="tablesort('name')">Name</th>
-                <th @click="tablesort('age')">Age</th>
-                <th @click="tablesort('email')">Email</th>
-                <td>Edit</td>
+                <template v-for="key in tableHeaders">
+                    <template v-if="key !== 'id' && key !=='noedit'">
+                        <th @click="tablesort(key)">{{ key[0].toUpperCase() + key.substring(1) }}</th>
+                    </template>
+                </template>
+                <th v-if="!searchItem.length">Edit</th>
             </tr>
             </thead>
             <tbody>
@@ -113,12 +115,16 @@
         },
         computed: {
             foundItems: function() {
-                let find = this.searchItem;
+                let find = this.searchItem,
+                    searchCallback = this.fuzzyMatch;
                 return this.items.filter( function (el) {
-                    return ( el.name == find ||
-                        el.age == find ||
-                        el.email == find );
+                    return ( searchCallback(find, el.name) ||
+                        searchCallback(find, String(el.age)) ||
+                        searchCallback(find, el.email) );
                 });
+            },
+            tableHeaders: function(){
+                return Object.keys( this.items[0] );
             }
         },
         methods: {
@@ -177,6 +183,28 @@
                         this.items[item].noedit = !this.items[item].noedit;
                     }
                 }
+            },
+            fuzzyMatch: function(needle, haystack) {
+                if(needle === "" || haystack === "") return true;
+
+                needle = needle.toUpperCase().replace(/ /g, "");
+                haystack = haystack.toUpperCase();
+
+                // All characters in needle must be present in haystack
+                let j = 0; // haystack position
+                for(let i = 0; i < needle.length; i++) {
+                    // Go down the haystack until we find the current needle character
+                    while(needle[i] !== haystack[j]) {
+                        j++;
+
+                        // If we reached the end of the haystack, then this is not a match
+                        if(j === haystack.length) {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
             }
         },
         watch: {
