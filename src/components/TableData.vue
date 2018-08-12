@@ -41,7 +41,7 @@
                     </td>
                     <td><input type="text" v-model="item.name" :disabled="item.noedit"/></td>
                     <td><input type="text" v-model="item.age" :disabled="item.noedit"/></td>
-                    <td><input type="text" v-model="item.email" :disabled="item.noedit"/></td>
+                    <td><input type="text" v-model="item.created" :disabled="item.noedit"/></td>
                     <td> <a href="#" @click.prevent="makeEditable(item.id)">Edit</a> </td>
                 </tr>
             </template>
@@ -76,28 +76,35 @@
                         id: "id1",
                         name: "John Doe",
                         age: 22,
-                        email: "email1@example.com",
+                        created: "01-01-2015",
                         noedit: true
                     },
                     {
                         id: "id2",
                         name: "Jane Doe",
                         age: 21,
-                        email: "email2@example.com",
+                        created: "01-05-2018",
                         noedit: true
                     },
                     {
                         id: "id3",
                         name: "Mr. Smith",
                         age: 28,
-                        email: "email3@example.com",
+                        created: "10-02-2016",
                         noedit: true
                     },
                     {
                         id: "id4",
                         name: "Mrs. Smith",
                         age: 25,
-                        email: "email4@example.com",
+                        created: "01-02-2017",
+                        noedit: true
+                    },
+                    {
+                        id: "id5",
+                        name: "Hello World",
+                        age: 20,
+                        created: "01-01-2018",
                         noedit: true
                     }
                 ],
@@ -107,20 +114,22 @@
                 selectAll: false,
                 currentPage: 0,
                 pageSize: 3,
+                formattedItems: [],
                 pagedItems: []
             };
         },
         created: function() {
+            this.formatItems();
             this.updatepagedItems();
         },
         computed: {
             foundItems: function() {
+                this.$router.push({ path: '/', query: { search: this.searchItem }});
                 let find = this.searchItem,
                     searchCallback = this.fuzzyMatch;
                 return this.items.filter( function (el) {
                     return ( searchCallback(find, el.name) ||
-                        searchCallback(find, String(el.age)) ||
-                        searchCallback(find, el.email) );
+                        searchCallback(find, String(el.age)) )
                 });
             },
             tableHeaders: function(){
@@ -128,6 +137,15 @@
             }
         },
         methods: {
+            formatItems: function() {
+                for (let i in this.items) {
+                    for (let key in this.items[i]) {
+                        if ( key === 'created'  ) {
+                            this.items[i][key] = this.$moment(this.items[i][key], 'YYYY MM DD');
+                        }
+                    }
+                }
+            },
             select: function() {
                 this.selected = [];
                 if (!this.selectAll) {
@@ -143,6 +161,7 @@
                 }
                 this.items.sort( this.compareValues( key, sort_order ) );
                 this.updatepagedItems();
+                this.$router.push({ path: '/', query: { order: key, order_by: sort_order }});
                 this.order = !this.order;
             },
             compareValues: function(key, order='asc') {
